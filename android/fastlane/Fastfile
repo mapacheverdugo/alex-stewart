@@ -1,0 +1,59 @@
+default_platform(:android)
+
+platform :android do
+  lane :flutter do |options|
+    build_number = options[:build_number]
+    build_name = options[:build_name]
+
+    Dir.chdir "../.." do
+      sh("flutter", "packages", "get")
+      sh("flutter", "clean")
+      sh("flutter", "build", "appbundle", "--no-tree-shake-icons", "--release", "--build-name=#{build_name}", "--build-number=#{build_number}")
+    end
+  end
+
+  lane :beta do |options|
+    build_number = options[:build_number]
+    build_name = options[:build_name]
+    track = "beta"
+
+    if options[:build] || options[:build_number] || options[:build_name]
+      flutter(build_number: options[:build_number], build_name: options[:build_name])
+    end
+
+    if options[:track]
+      track = options[:build]
+    end
+
+    upload_to_play_store(
+      track: track,
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      version_name: build_name,
+      version_code: build_number,
+      skip_upload_screenshots: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true
+    )
+  end
+
+
+  lane :playstore do |options|
+    build_number = options[:build_number]
+    build_name = options[:build_name]
+
+    if options[:build] || options[:build_number] || options[:build_name]
+      flutter(build_number: options[:build_number], build_name: options[:build_name])
+    end
+    
+    upload_to_play_store(
+      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      version_name: build_name,
+      version_code: build_number,
+      skip_upload_screenshots: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_images: true
+    )
+  end
+end
